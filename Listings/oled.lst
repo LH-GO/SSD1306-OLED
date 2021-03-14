@@ -1,0 +1,311 @@
+C51 COMPILER V9.60.0.0   OLED                                                              03/14/2021 15:41:06 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE OLED
+OBJECT MODULE PLACED IN .\Objects\oled.obj
+COMPILER INVOKED BY: D:\study\Keil5\C51\BIN\C51.EXE oled.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\
+                    -oled.lst) TABS(2) OBJECT(.\Objects\oled.obj)
+
+line level    source
+
+   1          #include "oled.h"
+   2          #include "oledcases.h"
+   3          
+   4          void IIC_Delay1us()   //@12.000MHz
+   5          {
+   6   1        _nop_();
+   7   1        _nop_();
+   8   1      }
+   9          
+  10          void delay1us(u8 x)
+  11          {
+  12   1        u8 i;
+  13   1        for(i=0;i<x;i++)
+  14   1        {
+  15   2          _nop_();
+  16   2        }
+  17   1      }
+  18          
+  19          void IIC_Start()
+  20          {
+  21   1        IIC_SDA=1;
+  22   1        IIC_SCL=1;
+  23   1        IIC_SDA=0;
+  24   1        IIC_Delay1us();
+  25   1        IIC_SCL=0;
+  26   1        IIC_Delay1us();
+  27   1      }
+  28          
+  29          void IIC_Stop()
+  30          {
+  31   1        IIC_SDA=0;
+  32   1        IIC_SCL=1;
+  33   1        IIC_SDA=1;
+  34   1        IIC_Delay1us();
+  35   1      }
+  36          
+  37          void IIC_Wait_Ack()
+  38          {
+  39   1        IIC_SCL=1;
+  40   1        IIC_SCL=0;
+  41   1      }
+  42          
+  43          //int IIC_Wait_Ack()
+  44          //{
+  45          //  IIC_SDA = 1;
+  46          //  delay1us(5);
+  47          //  IIC_SCL = 1;
+  48          //  delay1us(5);
+  49          //  CY=IIC_SDA;
+  50          //  IIC_SCL = 0;
+  51          //  delay1us(5);
+  52          //  return CY;
+  53          //}
+  54          
+C51 COMPILER V9.60.0.0   OLED                                                              03/14/2021 15:41:06 PAGE 2   
+
+  55          void IIC_Write_Byte(u8 IIC_Byte)
+  56          {
+  57   1        u8 i;
+  58   1        u8 da;
+  59   1        IIC_SCL=0;
+  60   1        for(i=0;i<8;i++)
+  61   1        {
+  62   2          da=IIC_Byte&0x80;
+  63   2          if(da==0x80)
+  64   2            IIC_SDA=1;
+  65   2          else
+  66   2            IIC_SDA=0;
+  67   2          IIC_Byte=IIC_Byte<<1;
+  68   2          delay1us(5);
+  69   2          IIC_SCL=1;
+  70   2          delay1us(5);
+  71   2          IIC_SCL=0;
+  72   2          delay1us(5);
+  73   2        }
+  74   1      }
+  75          
+  76          void IIC_Write_OLcmd(u8 IIC_Cmd)
+  77          {
+  78   1        IIC_Start();
+  79   1        IIC_Write_Byte(0x78);
+  80   1        IIC_Wait_Ack();
+  81   1        IIC_Write_Byte(0x00);
+  82   1        IIC_Wait_Ack();
+  83   1        IIC_Write_Byte(IIC_Cmd);
+  84   1        IIC_Wait_Ack();
+  85   1        IIC_Stop();
+  86   1      }
+  87          
+  88          void IIC_Write_OLdata(u8 IIC_data)
+  89          {
+  90   1        IIC_Start();
+  91   1        IIC_Write_Byte(0x78);
+  92   1        IIC_Wait_Ack();
+  93   1        IIC_Write_Byte(0x40);
+  94   1        IIC_Wait_Ack();
+  95   1        IIC_Write_Byte(IIC_data);
+  96   1        IIC_Wait_Ack();
+  97   1        IIC_Stop();
+  98   1      }
+  99          
+ 100          void OLED_Write_Byte(u8 dat,u8 cmd)
+ 101          {
+ 102   1        if(cmd)
+ 103   1        {
+ 104   2          IIC_Write_OLcmd(dat);
+ 105   2        }
+ 106   1        else
+ 107   1        {
+ 108   2          IIC_Write_OLdata(dat);
+ 109   2        }
+ 110   1      }
+ 111          
+ 112          void OLED_Set_Pos(u8 x, u8 y) //显示位置的坐标
+ 113          {   
+ 114   1        OLED_Write_Byte(0xb0+y,OLED_CMD);
+ 115   1        OLED_Write_Byte(((x&0xf0)>>4)|0x10,OLED_CMD);
+ 116   1        OLED_Write_Byte((x&0x0f),OLED_CMD); 
+C51 COMPILER V9.60.0.0   OLED                                                              03/14/2021 15:41:06 PAGE 3   
+
+ 117   1      } 
+ 118          
+ 119          void OLED_Display_On(void)
+ 120          {
+ 121   1        OLED_Write_Byte(0x8D,OLED_CMD);
+ 122   1        OLED_Write_Byte(0x14,OLED_CMD);
+ 123   1        OLED_Write_Byte(0xAF,OLED_CMD);
+ 124   1      }
+ 125          
+ 126          void OLED_Display_Off(void)
+ 127          {
+ 128   1        OLED_Write_Byte(0x8D,OLED_CMD);
+ 129   1        OLED_Write_Byte(0x10,OLED_CMD);
+ 130   1        OLED_Write_Byte(0xAE,OLED_CMD);
+ 131   1      }
+ 132          
+ 133          void OLED_On(void)
+ 134          {
+ 135   1        u8 i,n;
+ 136   1        for(i=0;i<8;i++)
+ 137   1        {
+ 138   2          OLED_Write_Byte(0xb0+i,OLED_CMD);
+ 139   2          OLED_Write_Byte(0x00,OLED_CMD);
+ 140   2          OLED_Write_Byte(0x10,OLED_CMD);
+ 141   2          for(n=0;n<128;n++)OLED_Write_Byte(0xff,OLED_DATA);
+ 142   2        }
+ 143   1      }
+ 144          
+ 145          void OLED_Clear(void)
+ 146          {
+ 147   1        u8 i,n;
+ 148   1        for(i=0;i<8;i++)
+ 149   1        {
+ 150   2          OLED_Write_Byte(0xb0+i,OLED_CMD);
+ 151   2          OLED_Write_Byte(0x00,OLED_CMD);
+ 152   2          OLED_Write_Byte(0x10,OLED_CMD);
+ 153   2          for(n=0;n<128;n++)OLED_Write_Byte(0x00,OLED_DATA);
+ 154   2        }
+ 155   1      }
+ 156          
+ 157          /*******显示ASCII表里的字符*******/
+ 158          void OLED_ShowChar(u8 x,u8 y,u8 chr,u8 Size)
+ 159          {
+ 160   1        u8 i,c;
+ 161   1        c=chr-' ';
+ 162   1        if(x>127){x=0;y=y+1;}
+ 163   1        if(Size==16)//8*16
+ 164   1        {
+ 165   2          OLED_Set_Pos(x, y);
+ 166   2          for(i=0;i<8;i++)
+ 167   2          OLED_Write_Byte(F8X16[c*16+i],OLED_DATA);
+ 168   2          OLED_Set_Pos(x, y+1);
+ 169   2          for(i=0;i<8;i++)
+ 170   2          OLED_Write_Byte(F8X16[c*16+i+8],OLED_DATA);
+ 171   2        }
+ 172   1        else//6*8
+ 173   1        {
+ 174   2          OLED_Set_Pos(x, y);
+ 175   2          for(i=0;i<6;i++)
+ 176   2          OLED_Write_Byte(F8X16[c*16+i],OLED_DATA);
+ 177   2        }
+ 178   1      }
+C51 COMPILER V9.60.0.0   OLED                                                              03/14/2021 15:41:06 PAGE 4   
+
+ 179          
+ 180          
+ 181          /*********显示汉字*********/
+ 182          void OLED_ShowCHinese(u8 x,u8 y,u8 num)
+ 183          {
+ 184   1        u8 i;
+ 185   1        OLED_Set_Pos(x, y);
+ 186   1        for(i=0;i<16;i++)
+ 187   1        {
+ 188   2          OLED_Write_Byte(Hzk[2*num][i],OLED_DATA);
+ 189   2        }
+ 190   1        OLED_Set_Pos(x, y+1);
+ 191   1        for(i=0;i<16;i++)
+ 192   1        {
+ 193   2          OLED_Write_Byte(Hzk[2*num+1][i],OLED_DATA);
+ 194   2        }
+ 195   1      }
+ 196          
+ 197          /*********最后把字符数组传递到图片数组中*********/
+ 198          void OLED_transport(u8 x, u8 y, u8 num)
+ 199          {
+ 200   1        u8 i;
+ 201   1        for(i=0;i<16;i++)
+ 202   1        {
+ 203   2          Draw_trans[y][x+i]=Hzk[2*num][i];
+ 204   2        }
+ 205   1        for(i=0;i<16;i++)
+ 206   1        {
+ 207   2          Draw_trans[y+1][x+i]=Hzk[2*num+1][i];
+ 208   2        }
+ 209   1      }
+ 210          
+ 211          /*********Hanz=1字符显示，Hanz=0图片显示*********/
+ 212          void OLED_Showpicture(u8 Hanz)
+ 213          {
+ 214   1        u8 i,n;
+ 215   1        if(Hanz)
+ 216   1        {
+ 217   2          for(i=0;i<8;i++)
+ 218   2          {
+ 219   3            OLED_Write_Byte(0xb0+i,OLED_CMD);
+ 220   3            OLED_Write_Byte(0x00,OLED_CMD);
+ 221   3            OLED_Write_Byte(0x10,OLED_CMD);
+ 222   3            for(n=0;n<128;n++)OLED_Write_Byte(Draw_trans[i][n],OLED_DATA);
+ 223   3          }
+ 224   2          for(i=0;i<8;i++)
+ 225   2            for(n=0;n<128;n++) Draw_trans[i][n]=0;
+ 226   2          
+ 227   2        }
+ 228   1        else
+ 229   1        {
+ 230   2          for(i=0;i<8;i++)
+ 231   2          {
+ 232   3            OLED_Write_Byte(0xb0+i,OLED_CMD);
+ 233   3            OLED_Write_Byte(0x00,OLED_CMD);
+ 234   3            OLED_Write_Byte(0x10,OLED_CMD);
+ 235   3            for(n=0;n<128;n++)OLED_Write_Byte(Draw[i][n],OLED_DATA);
+ 236   3          }
+ 237   2          for(i=0;i<8;i++)
+ 238   2            for(n=0;n<128;n++) Draw_trans[i][n]=0;
+ 239   2        }
+ 240   1        
+C51 COMPILER V9.60.0.0   OLED                                                              03/14/2021 15:41:06 PAGE 5   
+
+ 241   1      }
+ 242          
+ 243          /*********OLED初始化*********/
+ 244          void OLED_Init()
+ 245          {
+ 246   1        OLED_Write_Byte(0xAE,OLED_CMD); //关闭显示
+ 247   1        OLED_Write_Byte(0xD5,OLED_CMD); //设置时钟分频因子,震荡频率
+ 248   1        OLED_Write_Byte(0x80,OLED_CMD);   //[3:0],分频因子;[7:4],震荡频率
+ 249   1        OLED_Write_Byte(0xA8,OLED_CMD); //设置驱动路数
+ 250   1        OLED_Write_Byte(0X3F,OLED_CMD); //默认0X3F(1/64) 
+ 251   1        OLED_Write_Byte(0xD3,OLED_CMD); //设置显示偏移
+ 252   1        OLED_Write_Byte(0X00,OLED_CMD); //默认为0
+ 253   1      
+ 254   1        OLED_Write_Byte(0x40,OLED_CMD); //设置显示开始行 [5:0],行数.
+ 255   1                                    
+ 256   1        OLED_Write_Byte(0x8D,OLED_CMD); //电荷泵设置
+ 257   1        OLED_Write_Byte(0x14,OLED_CMD); //bit2，开启/关闭
+ 258   1        OLED_Write_Byte(0x20,OLED_CMD); //设置内存地址模式
+ 259   1        OLED_Write_Byte(0x02,OLED_CMD); //[1:0],00，列地址模式;01，行地址模式;10,页地址模式;默认10;
+ 260   1        OLED_Write_Byte(0xA1,OLED_CMD); //段重定义设置,bit0:0,0->0;1,0->127;
+ 261   1        OLED_Write_Byte(0xC8,OLED_CMD); //设置COM扫描方向;bit3:0,普通模式;1,重定义模式 COM[N-1]->COM0;N:驱动路数
+ 262   1        OLED_Write_Byte(0xDA,OLED_CMD); //设置COM硬件引脚配置
+ 263   1        OLED_Write_Byte(0x12,OLED_CMD); //[5:4]配置
+ 264   1           
+ 265   1        OLED_Write_Byte(0x81,OLED_CMD); //对比度设置
+ 266   1        OLED_Write_Byte(0xEF,OLED_CMD); //1~255;默认0X7F (亮度设置,越大越亮)
+ 267   1        OLED_Write_Byte(0xD9,OLED_CMD); //设置预充电周期
+ 268   1        OLED_Write_Byte(0xf1,OLED_CMD); //[3:0],PHASE 1;[7:4],PHASE 2;
+ 269   1        OLED_Write_Byte(0xDB,OLED_CMD); //设置VCOMH 电压倍率
+ 270   1        OLED_Write_Byte(0x30,OLED_CMD); //[6:4] 000,0.65*vcc;001,0.77*vcc;011,0.83*vcc;
+ 271   1      
+ 272   1        OLED_Write_Byte(0xA4,OLED_CMD); //全局显示开启;bit0:1,开启;0,关闭;(白屏/黑屏)
+ 273   1        OLED_Write_Byte(0xA6,OLED_CMD); //设置显示方式;bit0:1,反相显示;0,正常显示                    
+ 274   1        OLED_Write_Byte(0xAF,OLED_CMD); //开启显示   
+ 275   1        OLED_Clear();
+ 276   1      
+ 277   1      }
+ 278          
+ 279          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1239    ----
+   CONSTANT SIZE    =   3768    ----
+   XDATA SIZE       =   1024    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      10
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
